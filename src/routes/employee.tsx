@@ -54,10 +54,41 @@ function EmployeeDashboard() {
   const onScan = async (text: string) => {
     setScanning(false);
     const code = text.trim();
+    // Try to parse structured QR payload: JSON {book_id,name,author} or "id|name|author"
+    let parsed: { book_id?: string; name?: string; author?: string } = {};
     try {
-      const existing = await findBookByBookId(code);
-      if (existing) { startEdit(existing); toast.success(`Found ${existing.name}`); }
-      else { startNew({ book_id: code }); toast.info("New book — fill in details"); }
+      const j = JSON.parse(code);
+      if (j && typeof j === "object") {
+        parsed = {
+          book_id: String(j.book_id ?? j.id ?? "").trim(),
+          name: typeof j.name === "string" ? j.name : undefined,
+          author: typeof j.author === "string" ? j.author : undefined,
+        };
+      }
+    } catch {
+      if (code.includes("|")) {
+        const [bid, name, author] = code.split("|").map((s) => s.trim());
+        parsed = { book_id: bid, name, author };
+      }
+    }
+    const lookupId = (parsed.book_id || code).trim();
+    try {
+      const existing = await findBookByBookId(lookupId);
+      if (existing) {
+        startEdit({
+          ...existing,
+          author: existing.author ?? parsed.author ?? "",
+          name: existing.name || parsed.name || "",
+        } as any);
+        toast.success(`Found ${existing.name}`);
+      } else {
+        startNew({
+          book_id: lookupId,
+          name: parsed.name ?? "",
+          author: parsed.author ?? "",
+        });
+        toast.info(parsed.name ? "Prefilled from QR — review & save" : "New book — fill in details");
+      }
     } catch (e: any) { toast.error(e.message); }
   };
 
