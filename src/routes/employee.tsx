@@ -14,7 +14,7 @@ export const Route = createFileRoute("/employee")({
   head: () => ({
     meta: [
       { title: "Employee Dashboard — Smart AI Library" },
-      { name: "description", content: "Manage books, scan QR codes, and update rack inventory." },
+      { name: "description", content: "Book map — manage books, scan QR codes, and update rack inventory." },
     ],
   }),
   component: EmployeeDashboard,
@@ -115,7 +115,7 @@ function EmployeeDashboard() {
             <BookOpen className="w-8 h-8" />
             <div>
               <h1 className="text-2xl font-bold">Smart AI Library</h1>
-              <p className="text-sm text-primary-foreground/85">Employee dashboard</p>
+              <p className="text-sm text-primary-foreground/85">Book map</p>
             </div>
           </div>
           <Link to="/" className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
