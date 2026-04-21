@@ -57,8 +57,7 @@ function StudentDashboard() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by book name, ID, or author…"
-          placeholder="Search by book name or author…"
+            placeholder="Search by book name or author…"
             className="pl-12 h-14 text-base shadow-sm"
           />
         </div>
@@ -83,7 +82,6 @@ function StudentDashboard() {
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-3">
-                    <span className="font-mono px-2 py-0.5 rounded bg-muted">{b.book_id}</span>
                     <span className="inline-flex items-center gap-1"><MapPin className="w-4 h-4" /> Rack {b.rack_number}</span>
                     <span>{b.available_copies} / {b.total_copies} copies</span>
                   </div>
