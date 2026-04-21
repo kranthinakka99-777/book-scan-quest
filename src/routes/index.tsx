@@ -50,7 +50,7 @@ function LoginPage() {
           <button onClick={() => select("employee")} className="text-left group">
             <Card className="p-7 h-full transition-all hover:-translate-y-1 hover:shadow-2xl border-2 hover:border-accent">
               <Briefcase className="w-12 h-12 text-accent mb-4 group-hover:scale-110 transition-transform" style={{ color: "var(--accent)" }} />
-              <h2 className="text-2xl font-semibold mb-2">Employee</h2>
+              <h2 className="text-2xl font-semibold mb-2">Book map</h2>
               <p className="text-muted-foreground">Scan QR, manage books, update rack inventory.</p>
             </Card>
           </button>
