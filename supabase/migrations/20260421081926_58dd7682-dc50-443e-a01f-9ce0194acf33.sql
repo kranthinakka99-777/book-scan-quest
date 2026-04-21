@@ -1,0 +1,1 @@
+ALTER TABLE public.books DROP COLUMN book_id;
