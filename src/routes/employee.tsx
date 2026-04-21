@@ -14,7 +14,7 @@ export const Route = createFileRoute("/employee")({
   head: () => ({
     meta: [
       { title: "Employee Dashboard — Smart AI Library" },
-      { name: "description", content: "Manage books, scan QR codes, and update rack inventory." },
+      { name: "description", content: "Book map — manage books, scan QR codes, and update rack inventory." },
     ],
   }),
   component: EmployeeDashboard,
