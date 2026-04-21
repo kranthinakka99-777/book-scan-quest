@@ -145,7 +145,6 @@ function EmployeeDashboard() {
             <Card key={b.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted">{b.book_id}</span>
                   <h3 className="font-semibold">{b.name}</h3>
                   <Badge variant={b.available_copies > 0 ? "default" : "destructive"}>
                     {b.available_copies}/{b.total_copies}
@@ -173,7 +172,6 @@ function EmployeeDashboard() {
               <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
-              <Field label="Book ID"><Input value={editing.book_id} onChange={(e) => setEditing({ ...editing, book_id: e.target.value })} /></Field>
               <Field label="Name"><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>
               <Field label="Author"><Input value={editing.author} onChange={(e) => setEditing({ ...editing, author: e.target.value })} /></Field>
               <Field label="Rack number (1–10)">

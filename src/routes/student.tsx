@@ -30,7 +30,6 @@ function StudentDashboard() {
     if (!q) return books;
     return books.filter((b) =>
       b.name.toLowerCase().includes(q) ||
-      b.book_id.toLowerCase().includes(q) ||
       (b.author ?? "").toLowerCase().includes(q)
     );
   }, [books, query]);
@@ -59,6 +58,7 @@ function StudentDashboard() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by book name, ID, or author…"
+          placeholder="Search by book name or author…"
             className="pl-12 h-14 text-base shadow-sm"
           />
         </div>
