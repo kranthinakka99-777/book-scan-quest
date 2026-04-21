@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Book = {
   id: string;
-  book_id: string;
   name: string;
   author: string | null;
   rack_number: number;
@@ -13,15 +12,9 @@ export type Book = {
 };
 
 export async function fetchBooks(): Promise<Book[]> {
-  const { data, error } = await supabase.from("books").select("*").order("book_id");
+  const { data, error } = await supabase.from("books").select("*").order("name");
   if (error) throw error;
   return data as Book[];
-}
-
-export async function findBookByBookId(bookId: string): Promise<Book | null> {
-  const { data, error } = await supabase.from("books").select("*").eq("book_id", bookId).maybeSingle();
-  if (error) throw error;
-  return (data as Book) ?? null;
 }
 
 export async function upsertBook(book: Omit<Book, "id" | "created_at" | "updated_at"> & { id?: string }) {

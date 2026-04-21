@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { fetchBooks, upsertBook, deleteBook, findBookByBookId, type Book } from "@/lib/library";
+import { fetchBooks, upsertBook, deleteBook, type Book } from "@/lib/library";
 import { QrScanner } from "@/components/QrScanner";
 
 export const Route = createFileRoute("/employee")({
@@ -22,7 +22,6 @@ export const Route = createFileRoute("/employee")({
 
 type FormState = {
   id?: string;
-  book_id: string;
   name: string;
   author: string;
   rack_number: number;
@@ -30,7 +29,7 @@ type FormState = {
   available_copies: number;
 };
 
-const empty: FormState = { book_id: "", name: "", author: "", rack_number: 1, total_copies: 1, available_copies: 1 };
+const empty: FormState = { name: "", author: "", rack_number: 1, total_copies: 1, available_copies: 1 };
 
 function EmployeeDashboard() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -45,7 +44,7 @@ function EmployeeDashboard() {
   const visible = rack === "all" ? books : books.filter((b) => b.rack_number === rack);
 
   const startEdit = (b: Book) => setEditing({
-    id: b.id, book_id: b.book_id, name: b.name, author: b.author ?? "",
+    id: b.id, name: b.name, author: b.author ?? "",
     rack_number: b.rack_number, total_copies: b.total_copies, available_copies: b.available_copies,
   });
 
@@ -77,17 +76,16 @@ function EmployeeDashboard() {
       return;
     }
     startNew({ name: parsed.name, author: parsed.author ?? "" });
-    toast.success("Prefilled from QR — add Book ID & save");
+    toast.success("Prefilled from QR — review & save");
   };
 
   const save = async () => {
     if (!editing) return;
-    if (!editing.book_id.trim() || !editing.name.trim()) { toast.error("Book ID and Name are required"); return; }
+    if (!editing.name.trim()) { toast.error("Name is required"); return; }
     if (editing.available_copies > editing.total_copies) { toast.error("Available cannot exceed total"); return; }
     try {
       await upsertBook({
         id: editing.id,
-        book_id: editing.book_id.trim(),
         name: editing.name.trim(),
         author: editing.author.trim() || null,
         rack_number: Number(editing.rack_number),
@@ -147,7 +145,6 @@ function EmployeeDashboard() {
             <Card key={b.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted">{b.book_id}</span>
                   <h3 className="font-semibold">{b.name}</h3>
                   <Badge variant={b.available_copies > 0 ? "default" : "destructive"}>
                     {b.available_copies}/{b.total_copies}
@@ -175,7 +172,6 @@ function EmployeeDashboard() {
               <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
-              <Field label="Book ID"><Input value={editing.book_id} onChange={(e) => setEditing({ ...editing, book_id: e.target.value })} /></Field>
               <Field label="Name"><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>
               <Field label="Author"><Input value={editing.author} onChange={(e) => setEditing({ ...editing, author: e.target.value })} /></Field>
               <Field label="Rack number (1–10)">
