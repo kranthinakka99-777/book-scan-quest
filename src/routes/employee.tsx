@@ -158,7 +158,10 @@ function EmployeeDashboard() {
                     {b.available_copies}/{b.total_copies}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{b.author ?? "—"} · Rack {b.rack_number}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {b.author ?? "—"} · Rack {b.rack_number}
+                  {b.branch ? ` · ${b.branch}` : ""}
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => startEdit(b)}><Pencil className="w-4 h-4" /></Button>
@@ -185,6 +188,18 @@ function EmployeeDashboard() {
               <Field label="Rack number (1–10)">
                 <Input type="number" min={1} max={10} value={editing.rack_number}
                   onChange={(e) => setEditing({ ...editing, rack_number: Number(e.target.value) })} />
+              </Field>
+              <Field label="Branch">
+                <select
+                  value={editing.branch}
+                  onChange={(e) => setEditing({ ...editing, branch: e.target.value })}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Select branch…</option>
+                  {BRANCHES.map((br) => (
+                    <option key={br} value={br}>{br}</option>
+                  ))}
+                </select>
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Total copies">
