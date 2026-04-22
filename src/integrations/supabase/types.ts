@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           author: string | null
           available_copies: number
+          branch: string | null
           created_at: string
           id: string
           name: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           author?: string | null
           available_copies?: number
+          branch?: string | null
           created_at?: string
           id?: string
           name: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           author?: string | null
           available_copies?: number
+          branch?: string | null
           created_at?: string
           id?: string
           name?: string

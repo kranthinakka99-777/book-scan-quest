@@ -5,6 +5,7 @@ export type Book = {
   name: string;
   author: string | null;
   rack_number: number;
+  branch: string | null;
   total_copies: number;
   available_copies: number;
   created_at: string;
