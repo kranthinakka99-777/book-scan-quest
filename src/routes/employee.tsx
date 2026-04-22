@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X } from "lucide-react";
+import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { fetchBooks, upsertBook, deleteBook, type Book } from "@/lib/library";
+import {
+  fetchBooks, upsertBook, deleteBook, type Book,
+  fetchAllRequests, approveRequest, rejectRequest, markReturned,
+  type BorrowRequestWithBook,
+} from "@/lib/library";
 import { QrScanner } from "@/components/QrScanner";
 
 export const Route = createFileRoute("/employee")({
@@ -38,10 +42,14 @@ function EmployeeDashboard() {
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [tab, setTab] = useState<"books" | "queue">("books");
+  const [requests, setRequests] = useState<BorrowRequestWithBook[]>([]);
+  const [queueFilter, setQueueFilter] = useState<"pending" | "approved" | "all">("pending");
 
   const reload = () => fetchBooks().then(setBooks).catch((e) => toast.error(e.message));
+  const reloadRequests = () => fetchAllRequests().then(setRequests).catch((e) => toast.error(e.message));
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { reload(); reloadRequests(); }, []);
 
   const visible = rack === "all" ? books : books.filter((b) => b.rack_number === rack);
 
@@ -112,6 +120,36 @@ function EmployeeDashboard() {
     catch (e: any) { toast.error(e.message); }
   };
 
+  const handleApprove = async (id: string) => {
+    const days = prompt("Loan period in days?", "14");
+    if (!days) return;
+    const n = parseInt(days, 10);
+    if (!Number.isFinite(n) || n <= 0 || n > 365) { toast.error("Enter 1–365 days"); return; }
+    const due = new Date();
+    due.setDate(due.getDate() + n);
+    try {
+      await approveRequest(id, due.toISOString().slice(0, 10));
+      toast.success("Approved");
+      reloadRequests(); reload();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleReject = async (id: string) => {
+    if (!confirm("Reject this request?")) return;
+    try { await rejectRequest(id); toast.success("Rejected"); reloadRequests(); }
+    catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleReturn = async (id: string) => {
+    try { await markReturned(id); toast.success("Marked returned"); reloadRequests(); reload(); }
+    catch (e: any) { toast.error(e.message); }
+  };
+
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const visibleRequests = requests.filter((r) =>
+    queueFilter === "all" ? true : r.status === queueFilter
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster />
@@ -131,6 +169,24 @@ function EmployeeDashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex gap-2 mb-6 border-b">
+          <button
+            onClick={() => setTab("books")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${tab === "books" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            Books
+          </button>
+          <button
+            onClick={() => setTab("queue")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition inline-flex items-center gap-2 ${tab === "queue" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            <Inbox className="w-4 h-4" /> Borrow queue
+            {pendingCount > 0 && <Badge variant="destructive">{pendingCount}</Badge>}
+          </button>
+        </div>
+
+        {tab === "books" && (
+          <>
         <div className="flex flex-wrap gap-3 mb-6">
           <Button onClick={() => setScanning(true)} className="gap-2"><QrCode className="w-4 h-4" /> Scan QR</Button>
           <Button onClick={() => startNew()} variant="secondary" className="gap-2"><Plus className="w-4 h-4" /> Add book</Button>
@@ -171,6 +227,68 @@ function EmployeeDashboard() {
           ))}
           {visible.length === 0 && <p className="text-center text-muted-foreground py-8">No books in this rack.</p>}
         </div>
+          </>
+        )}
+
+        {tab === "queue" && (
+          <div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(["pending", "approved", "all"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setQueueFilter(f)}
+                  className={`px-3 py-1.5 rounded-md text-sm border capitalize ${queueFilter === f ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-3">
+              {visibleRequests.map((r) => {
+                const overdue = r.status === "approved" && r.due_date && new Date(r.due_date) < new Date();
+                return (
+                  <Card key={r.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold">{r.book?.name ?? "Book"}</h3>
+                        <Badge variant={
+                          r.status === "approved" ? "default"
+                          : r.status === "pending" ? "secondary"
+                          : r.status === "rejected" ? "destructive"
+                          : "outline"
+                        } className="capitalize">{r.status}</Badge>
+                        {overdue && <Badge variant="destructive">Overdue</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {r.student_name} · {r.student_identifier}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Requested {new Date(r.requested_at).toLocaleString()}
+                        {r.due_date ? ` · Due ${new Date(r.due_date).toLocaleDateString()}` : ""}
+                        {r.returned_at ? ` · Returned ${new Date(r.returned_at).toLocaleDateString()}` : ""}
+                      </p>
+                      {r.notes && <p className="text-xs italic text-muted-foreground mt-1">"{r.notes}"</p>}
+                    </div>
+                    <div className="flex gap-2">
+                      {r.status === "pending" && (
+                        <>
+                          <Button size="sm" onClick={() => handleApprove(r.id)} className="gap-1"><Check className="w-4 h-4" /> Approve</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleReject(r.id)} className="gap-1"><X className="w-4 h-4" /> Reject</Button>
+                        </>
+                      )}
+                      {r.status === "approved" && (
+                        <Button size="sm" variant="secondary" onClick={() => handleReturn(r.id)} className="gap-1">
+                          <RotateCcw className="w-4 h-4" /> Mark returned
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+              {visibleRequests.length === 0 && <p className="text-center text-muted-foreground py-8">No requests.</p>}
+            </div>
+          </div>
+        )}
       </main>
 
       {scanning && <QrScanner onScan={onScan} onClose={() => setScanning(false)} />}

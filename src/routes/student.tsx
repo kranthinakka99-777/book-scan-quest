@@ -1,10 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Search, ArrowLeft, MapPin } from "lucide-react";
+import { BookOpen, Search, ArrowLeft, MapPin, BookPlus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchBooks, type Book } from "@/lib/library";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import {
+  fetchBooks,
+  createBorrowRequest,
+  fetchMyRequests,
+  type Book,
+  type BorrowRequestWithBook,
+} from "@/lib/library";
 
 export const Route = createFileRoute("/student")({
   head: () => ({
@@ -20,10 +29,26 @@ function StudentDashboard() {
   const [books, setBooks] = useState<Book[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [identifier, setIdentifier] = useState<string>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("student_id") ?? "" : ""
+  );
+  const [studentName, setStudentName] = useState<string>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("student_name") ?? "" : ""
+  );
+  const [requesting, setRequesting] = useState<Book | null>(null);
+  const [myRequests, setMyRequests] = useState<BorrowRequestWithBook[]>([]);
+  const [showMine, setShowMine] = useState(false);
 
   useEffect(() => {
     fetchBooks().then((b) => { setBooks(b); setLoading(false); }).catch(() => setLoading(false));
   }, []);
+
+  const reloadMine = () => {
+    if (!identifier) { setMyRequests([]); return; }
+    fetchMyRequests(identifier).then(setMyRequests).catch(() => {});
+  };
+
+  useEffect(() => { reloadMine(); }, [identifier]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -34,8 +59,29 @@ function StudentDashboard() {
     );
   }, [books, query]);
 
+  const submitRequest = async (name: string, id: string, notes: string) => {
+    if (!requesting) return;
+    if (!name.trim() || !id.trim()) { toast.error("Name and roll/email are required"); return; }
+    try {
+      await createBorrowRequest({
+        book_id: requesting.id,
+        student_name: name.trim(),
+        student_identifier: id.trim(),
+        notes: notes.trim() || undefined,
+      });
+      localStorage.setItem("student_id", id.trim());
+      localStorage.setItem("student_name", name.trim());
+      setIdentifier(id.trim());
+      setStudentName(name.trim());
+      setRequesting(null);
+      toast.success("Request submitted — pending approval");
+      reloadMine();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Toaster />
       <header className="border-b" style={{ background: "var(--gradient-hero)" }}>
         <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between text-primary-foreground">
           <div className="flex items-center gap-3">
@@ -45,13 +91,44 @@ function StudentDashboard() {
               <p className="text-sm text-primary-foreground/85">Student dashboard</p>
             </div>
           </div>
-          <Link to="/" className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
-            <ArrowLeft className="w-4 h-4" /> Logout
-          </Link>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowMine((v) => !v)} className="text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
+              My requests {myRequests.length > 0 && <span className="ml-1 bg-white/25 rounded px-1.5">{myRequests.length}</span>}
+            </button>
+            <Link to="/" className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
+              <ArrowLeft className="w-4 h-4" /> Logout
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
+        {showMine && (
+          <Card className="p-5 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">My borrow requests</h2>
+              {!identifier && <p className="text-sm text-muted-foreground">Submit a request to start tracking.</p>}
+            </div>
+            {identifier && myRequests.length === 0 && (
+              <p className="text-sm text-muted-foreground">No requests yet for {identifier}.</p>
+            )}
+            <div className="grid gap-2">
+              {myRequests.map((r) => (
+                <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 text-sm border rounded-md p-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">{r.book?.name ?? "Book"}</p>
+                    <p className="text-muted-foreground">
+                      Requested {new Date(r.requested_at).toLocaleDateString()}
+                      {r.due_date ? ` · Due ${new Date(r.due_date).toLocaleDateString()}` : ""}
+                    </p>
+                  </div>
+                  <StatusBadge status={r.status} />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         <div className="relative mb-8">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
@@ -86,12 +163,85 @@ function StudentDashboard() {
                     {b.branch && <span>Branch: {b.branch}</span>}
                     <span>{b.available_copies} / {b.total_copies} copies</span>
                   </div>
+                  <div className="mt-4">
+                    <Button
+                      size="sm"
+                      disabled={!available}
+                      onClick={() => setRequesting(b)}
+                      className="gap-2"
+                    >
+                      <BookPlus className="w-4 h-4" />
+                      {available ? "Request to borrow" : "Unavailable"}
+                    </Button>
+                  </div>
                 </Card>
               );
             })}
           </div>
         )}
       </main>
+
+      {requesting && (
+        <RequestModal
+          book={requesting}
+          defaultName={studentName}
+          defaultId={identifier}
+          onClose={() => setRequesting(null)}
+          onSubmit={submitRequest}
+        />
+      )}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const variant: "default" | "secondary" | "destructive" | "outline" =
+    status === "approved" ? "default"
+    : status === "pending" ? "secondary"
+    : status === "rejected" ? "destructive"
+    : "outline";
+  return <Badge variant={variant} className="capitalize">{status}</Badge>;
+}
+
+function RequestModal({
+  book, defaultName, defaultId, onClose, onSubmit,
+}: {
+  book: Book;
+  defaultName: string;
+  defaultId: string;
+  onClose: () => void;
+  onSubmit: (name: string, id: string, notes: string) => void;
+}) {
+  const [name, setName] = useState(defaultName);
+  const [id, setId] = useState(defaultId);
+  const [notes, setNotes] = useState("");
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Borrow request</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">For: <span className="font-medium text-foreground">{book.name}</span></p>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="text-sm font-medium mb-1 block">Your name</span>
+            <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium mb-1 block">Roll number / Email</span>
+            <Input value={id} onChange={(e) => setId(e.target.value)} maxLength={120} />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium mb-1 block">Notes (optional)</span>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
+          </label>
+        </div>
+        <div className="flex gap-2 mt-5">
+          <Button onClick={() => onSubmit(name, id, notes)} className="flex-1">Submit request</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        </div>
+      </Card>
     </div>
   );
 }
