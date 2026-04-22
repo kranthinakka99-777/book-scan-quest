@@ -83,6 +83,7 @@ function StudentDashboard() {
                   </div>
                   <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-3">
                     <span className="inline-flex items-center gap-1"><MapPin className="w-4 h-4" /> Rack {b.rack_number}</span>
+                    {b.branch && <span>Branch: {b.branch}</span>}
                     <span>{b.available_copies} / {b.total_copies} copies</span>
                   </div>
                 </Card>
