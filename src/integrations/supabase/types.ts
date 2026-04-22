@@ -50,6 +50,59 @@ export type Database = {
         }
         Relationships: []
       }
+      borrow_requests: {
+        Row: {
+          book_id: string
+          created_at: string
+          decided_at: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          requested_at: string
+          returned_at: string | null
+          status: Database["public"]["Enums"]["borrow_status"]
+          student_identifier: string
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          decided_at?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          returned_at?: string | null
+          status?: Database["public"]["Enums"]["borrow_status"]
+          student_identifier: string
+          student_name: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          decided_at?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          returned_at?: string | null
+          status?: Database["public"]["Enums"]["borrow_status"]
+          student_identifier?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "borrow_requests_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -58,7 +111,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      borrow_status: "pending" | "approved" | "rejected" | "returned"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -185,6 +238,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      borrow_status: ["pending", "approved", "rejected", "returned"],
+    },
   },
 } as const
