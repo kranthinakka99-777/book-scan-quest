@@ -25,11 +25,13 @@ type FormState = {
   name: string;
   author: string;
   rack_number: number;
+  branch: string;
   total_copies: number;
   available_copies: number;
 };
 
-const empty: FormState = { name: "", author: "", rack_number: 1, total_copies: 1, available_copies: 1 };
+const BRANCHES = ["AIML", "CSE", "EEE", "ECE", "MEC", "CIVIL", "IT"];
+const empty: FormState = { name: "", author: "", rack_number: 1, branch: "", total_copies: 1, available_copies: 1 };
 
 function EmployeeDashboard() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -45,7 +47,8 @@ function EmployeeDashboard() {
 
   const startEdit = (b: Book) => setEditing({
     id: b.id, name: b.name, author: b.author ?? "",
-    rack_number: b.rack_number, total_copies: b.total_copies, available_copies: b.available_copies,
+    rack_number: b.rack_number, branch: b.branch ?? "",
+    total_copies: b.total_copies, available_copies: b.available_copies,
   });
 
   const startNew = (preset?: Partial<FormState>) => setEditing({ ...empty, rack_number: rack === "all" ? 1 : rack, ...preset });
@@ -53,7 +56,8 @@ function EmployeeDashboard() {
   const onScan = async (text: string) => {
     setScanning(false);
     const code = text.trim();
-    // Parse QR payload for name & author only. Supports JSON {name,author} or "name|author".
+    // Parse QR payload for name & author. Supports JSON {name,author},
+    // two-line text (line 1 = name, line 2 = author), or "name|author".
     let parsed: { name?: string; author?: string } = {};
     try {
       const j = JSON.parse(code);
@@ -64,7 +68,10 @@ function EmployeeDashboard() {
         };
       }
     } catch {
-      if (code.includes("|")) {
+      const lines = code.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      if (lines.length >= 2) {
+        parsed = { name: lines[0], author: lines[1] };
+      } else if (code.includes("|")) {
         const [name, author] = code.split("|").map((s) => s.trim());
         parsed = { name, author };
       } else {
@@ -89,6 +96,7 @@ function EmployeeDashboard() {
         name: editing.name.trim(),
         author: editing.author.trim() || null,
         rack_number: Number(editing.rack_number),
+        branch: editing.branch.trim() || null,
         total_copies: Number(editing.total_copies),
         available_copies: Number(editing.available_copies),
       });
