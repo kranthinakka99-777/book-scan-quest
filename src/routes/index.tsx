@@ -17,7 +17,7 @@ function LoginPage() {
 
   const select = (role: "student" | "employee") => {
     localStorage.setItem("library_role", role);
-    navigate({ to: role === "student" ? "/student" : "/employee" });
+    navigate({ to: role === "student" ? "/student-auth" : "/employee" });
   };
 
   return (

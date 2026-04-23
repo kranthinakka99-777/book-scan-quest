@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StudentAuthRouteImport } from './routes/student-auth'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiOwnerVerifyRouteImport } from './routes/api/owner-verify'
 import { Route as ApiLibraryChatRouteImport } from './routes/api/library-chat'
 
+const StudentAuthRoute = StudentAuthRouteImport.update({
+  id: '/student-auth',
+  path: '/student-auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
   path: '/student',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
   '/student': typeof StudentRoute
+  '/student-auth': typeof StudentAuthRoute
   '/api/library-chat': typeof ApiLibraryChatRoute
   '/api/owner-verify': typeof ApiOwnerVerifyRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
   '/student': typeof StudentRoute
+  '/student-auth': typeof StudentAuthRoute
   '/api/library-chat': typeof ApiLibraryChatRoute
   '/api/owner-verify': typeof ApiOwnerVerifyRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
   '/student': typeof StudentRoute
+  '/student-auth': typeof StudentAuthRoute
   '/api/library-chat': typeof ApiLibraryChatRoute
   '/api/owner-verify': typeof ApiOwnerVerifyRoute
 }
@@ -69,15 +78,23 @@ export interface FileRouteTypes {
     | '/'
     | '/employee'
     | '/student'
+    | '/student-auth'
     | '/api/library-chat'
     | '/api/owner-verify'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/employee' | '/student' | '/api/library-chat' | '/api/owner-verify'
+  to:
+    | '/'
+    | '/employee'
+    | '/student'
+    | '/student-auth'
+    | '/api/library-chat'
+    | '/api/owner-verify'
   id:
     | '__root__'
     | '/'
     | '/employee'
     | '/student'
+    | '/student-auth'
     | '/api/library-chat'
     | '/api/owner-verify'
   fileRoutesById: FileRoutesById
@@ -86,12 +103,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeeRoute: typeof EmployeeRoute
   StudentRoute: typeof StudentRoute
+  StudentAuthRoute: typeof StudentAuthRoute
   ApiLibraryChatRoute: typeof ApiLibraryChatRoute
   ApiOwnerVerifyRoute: typeof ApiOwnerVerifyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/student-auth': {
+      id: '/student-auth'
+      path: '/student-auth'
+      fullPath: '/student-auth'
+      preLoaderRoute: typeof StudentAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/student': {
       id: '/student'
       path: '/student'
@@ -134,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeeRoute: EmployeeRoute,
   StudentRoute: StudentRoute,
+  StudentAuthRoute: StudentAuthRoute,
   ApiLibraryChatRoute: ApiLibraryChatRoute,
   ApiOwnerVerifyRoute: ApiOwnerVerifyRoute,
 }

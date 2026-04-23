@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock } from "lucide-react";
+import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   fetchBooks, upsertBook, deleteBook, type Book,
   fetchAllRequests, approveRequest, rejectRequest, markReturned,
   type BorrowRequestWithBook,
+  fetchAllStudents, type StudentProfile,
 } from "@/lib/library";
 import { QrScanner } from "@/components/QrScanner";
 
@@ -112,14 +113,17 @@ function EmployeeDashboard() {
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [tab, setTab] = useState<"books" | "queue">("books");
+  const [tab, setTab] = useState<"books" | "queue" | "students">("books");
   const [requests, setRequests] = useState<BorrowRequestWithBook[]>([]);
   const [queueFilter, setQueueFilter] = useState<"pending" | "approved" | "all">("pending");
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
 
   const reload = () => fetchBooks().then(setBooks).catch((e) => toast.error(e.message));
   const reloadRequests = () => fetchAllRequests().then(setRequests).catch((e) => toast.error(e.message));
+  const reloadStudents = () => fetchAllStudents().then(setStudents).catch((e) => toast.error(e.message));
 
-  useEffect(() => { reload(); reloadRequests(); }, []);
+  useEffect(() => { reload(); reloadRequests(); reloadStudents(); }, []);
 
   const visible = rack === "all" ? books : books.filter((b) => b.rack_number === rack);
 
@@ -253,6 +257,13 @@ function EmployeeDashboard() {
             <Inbox className="w-4 h-4" /> Borrow queue
             {pendingCount > 0 && <Badge variant="destructive">{pendingCount}</Badge>}
           </button>
+          <button
+            onClick={() => setTab("students")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition inline-flex items-center gap-2 ${tab === "students" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            <Users className="w-4 h-4" /> Students
+            {students.length > 0 && <Badge variant="secondary">{students.length}</Badge>}
+          </button>
         </div>
 
         {tab === "books" && (
@@ -356,6 +367,50 @@ function EmployeeDashboard() {
                 );
               })}
               {visibleRequests.length === 0 && <p className="text-center text-muted-foreground py-8">No requests.</p>}
+            </div>
+          </div>
+        )}
+
+        {tab === "students" && (
+          <div>
+            <div className="mb-4">
+              <Input
+                placeholder="Search by name, roll number, branch, email, or phone…"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+            <div className="grid gap-3">
+              {students
+                .filter((s) => {
+                  const q = studentSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return [s.full_name, s.roll_number, s.branch, s.email ?? "", s.phone ?? ""]
+                    .some((v) => v.toLowerCase().includes(q));
+                })
+                .map((s) => (
+                  <Card key={s.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold">{s.full_name}</h3>
+                        <Badge variant="outline">{s.branch}</Badge>
+                        <Badge variant="secondary" className="capitalize">{s.identifier_type}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Roll: {s.roll_number}
+                        {s.email ? ` · ${s.email}` : ""}
+                        {s.phone ? ` · ${s.phone}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Joined {new Date(s.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </Card>
+                ))}
+              {students.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No students have signed up yet.</p>
+              )}
             </div>
           </div>
         )}

@@ -103,6 +103,45 @@ export type Database = {
           },
         ]
       }
+      student_profiles: {
+        Row: {
+          branch: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          identifier_type: string
+          phone: string | null
+          roll_number: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          branch: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          identifier_type: string
+          phone?: string | null
+          roll_number: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          branch?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          identifier_type?: string
+          phone?: string | null
+          roll_number?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
