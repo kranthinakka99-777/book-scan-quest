@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw } from "lucide-react";
+import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,78 @@ export const Route = createFileRoute("/employee")({
       { name: "description", content: "Book map — manage books, scan QR codes, and update rack inventory." },
     ],
   }),
-  component: EmployeeDashboard,
+  component: EmployeeGate,
 });
+
+function EmployeeGate() {
+  const [unlocked, setUnlocked] = useState<boolean>(() =>
+    typeof window !== "undefined" && sessionStorage.getItem("owner_unlocked") === "1"
+  );
+  if (!unlocked) return <OwnerLogin onUnlock={() => setUnlocked(true)} />;
+  return <EmployeeDashboard />;
+}
+
+function OwnerLogin({ onUnlock }: { onUnlock: () => void }) {
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/owner-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem("owner_unlocked", "1");
+        toast.success("Welcome back, owner");
+        onUnlock();
+      } else {
+        toast.error("Incorrect password");
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--gradient-hero)" }}>
+      <Toaster />
+      <Card className="w-full max-w-md p-7">
+        <div className="flex items-center gap-3 mb-2">
+          <Lock className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold">Owner access</h1>
+        </div>
+        <p className="text-sm text-muted-foreground mb-5">
+          The Book Map is restricted. Enter the owner password to continue.
+        </p>
+        <form onSubmit={submit} className="space-y-3">
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Owner password"
+            autoFocus
+            maxLength={200}
+          />
+          <div className="flex gap-2">
+            <Button type="submit" disabled={loading || !password} className="flex-1">
+              {loading ? "Verifying…" : "Unlock Book Map"}
+            </Button>
+            <Link to="/" className="inline-flex items-center justify-center text-sm px-3 rounded-md border hover:bg-muted">
+              Back
+            </Link>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
 
 type FormState = {
   id?: string;
