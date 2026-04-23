@@ -13,6 +13,7 @@ import { Route as StudentAuthRouteImport } from './routes/student-auth'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as ApiOwnerVerifyRouteImport } from './routes/api/owner-verify'
 import { Route as ApiLibraryChatRouteImport } from './routes/api/library-chat'
 
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentProfileRoute = StudentProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => StudentRoute,
+} as any)
 const ApiOwnerVerifyRoute = ApiOwnerVerifyRouteImport.update({
   id: '/api/owner-verify',
   path: '/api/owner-verify',
@@ -50,27 +56,30 @@ const ApiLibraryChatRoute = ApiLibraryChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
-  '/student': typeof StudentRoute
+  '/student': typeof StudentRouteWithChildren
   '/student-auth': typeof StudentAuthRoute
   '/api/library-chat': typeof ApiLibraryChatRoute
   '/api/owner-verify': typeof ApiOwnerVerifyRoute
+  '/student/profile': typeof StudentProfileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
-  '/student': typeof StudentRoute
+  '/student': typeof StudentRouteWithChildren
   '/student-auth': typeof StudentAuthRoute
   '/api/library-chat': typeof ApiLibraryChatRoute
   '/api/owner-verify': typeof ApiOwnerVerifyRoute
+  '/student/profile': typeof StudentProfileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
-  '/student': typeof StudentRoute
+  '/student': typeof StudentRouteWithChildren
   '/student-auth': typeof StudentAuthRoute
   '/api/library-chat': typeof ApiLibraryChatRoute
   '/api/owner-verify': typeof ApiOwnerVerifyRoute
+  '/student/profile': typeof StudentProfileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/student-auth'
     | '/api/library-chat'
     | '/api/owner-verify'
+    | '/student/profile'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/student-auth'
     | '/api/library-chat'
     | '/api/owner-verify'
+    | '/student/profile'
   id:
     | '__root__'
     | '/'
@@ -97,12 +108,13 @@ export interface FileRouteTypes {
     | '/student-auth'
     | '/api/library-chat'
     | '/api/owner-verify'
+    | '/student/profile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeeRoute: typeof EmployeeRoute
-  StudentRoute: typeof StudentRoute
+  StudentRoute: typeof StudentRouteWithChildren
   StudentAuthRoute: typeof StudentAuthRoute
   ApiLibraryChatRoute: typeof ApiLibraryChatRoute
   ApiOwnerVerifyRoute: typeof ApiOwnerVerifyRoute
@@ -138,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/profile': {
+      id: '/student/profile'
+      path: '/profile'
+      fullPath: '/student/profile'
+      preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof StudentRoute
+    }
     '/api/owner-verify': {
       id: '/api/owner-verify'
       path: '/api/owner-verify'
@@ -155,10 +174,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface StudentRouteChildren {
+  StudentProfileRoute: typeof StudentProfileRoute
+}
+
+const StudentRouteChildren: StudentRouteChildren = {
+  StudentProfileRoute: StudentProfileRoute,
+}
+
+const StudentRouteWithChildren =
+  StudentRoute._addFileChildren(StudentRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeeRoute: EmployeeRoute,
-  StudentRoute: StudentRoute,
+  StudentRoute: StudentRouteWithChildren,
   StudentAuthRoute: StudentAuthRoute,
   ApiLibraryChatRoute: ApiLibraryChatRoute,
   ApiOwnerVerifyRoute: ApiOwnerVerifyRoute,
