@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Search, ArrowLeft, MapPin, BookPlus, X, LogOut } from "lucide-react";
+import { BookOpen, Search, ArrowLeft, MapPin, BookPlus, X, LogOut, UserCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +129,9 @@ function StudentDashboard() {
             <button onClick={() => setShowMine((v) => !v)} className="text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
               My requests {myRequests.length > 0 && <span className="ml-1 bg-white/25 rounded px-1.5">{myRequests.length}</span>}
             </button>
+            <Link to="/student/profile" className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
+              <UserCircle className="w-4 h-4" /> Profile
+            </Link>
             <button onClick={handleLogout} className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
               <LogOut className="w-4 h-4" /> Log out
             </button>
