@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { ArrowLeft, BookOpen, Clock, CheckCircle2, XCircle, RotateCcw, LogOut, Mail, Phone, Hash, GraduationCap, User } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -174,9 +174,9 @@ type TimelineEvent = {
   title: string;
   bookName: string;
   detail?: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   dot: string;
-  badge?: JSX.Element;
+  badge?: ReactElement;
 };
 
 function buildTimeline(requests: BorrowRequestWithBook[]): TimelineEvent[] {
