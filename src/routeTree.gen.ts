@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiOwnerVerifyRouteImport } from './routes/api/owner-verify'
+import { Route as ApiLibraryChatRouteImport } from './routes/api/library-chat'
 
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
@@ -28,35 +30,64 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOwnerVerifyRoute = ApiOwnerVerifyRouteImport.update({
+  id: '/api/owner-verify',
+  path: '/api/owner-verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLibraryChatRoute = ApiLibraryChatRouteImport.update({
+  id: '/api/library-chat',
+  path: '/api/library-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
   '/student': typeof StudentRoute
+  '/api/library-chat': typeof ApiLibraryChatRoute
+  '/api/owner-verify': typeof ApiOwnerVerifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
   '/student': typeof StudentRoute
+  '/api/library-chat': typeof ApiLibraryChatRoute
+  '/api/owner-verify': typeof ApiOwnerVerifyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRoute
   '/student': typeof StudentRoute
+  '/api/library-chat': typeof ApiLibraryChatRoute
+  '/api/owner-verify': typeof ApiOwnerVerifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/employee' | '/student'
+  fullPaths:
+    | '/'
+    | '/employee'
+    | '/student'
+    | '/api/library-chat'
+    | '/api/owner-verify'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/employee' | '/student'
-  id: '__root__' | '/' | '/employee' | '/student'
+  to: '/' | '/employee' | '/student' | '/api/library-chat' | '/api/owner-verify'
+  id:
+    | '__root__'
+    | '/'
+    | '/employee'
+    | '/student'
+    | '/api/library-chat'
+    | '/api/owner-verify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeeRoute: typeof EmployeeRoute
   StudentRoute: typeof StudentRoute
+  ApiLibraryChatRoute: typeof ApiLibraryChatRoute
+  ApiOwnerVerifyRoute: typeof ApiOwnerVerifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +113,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/owner-verify': {
+      id: '/api/owner-verify'
+      path: '/api/owner-verify'
+      fullPath: '/api/owner-verify'
+      preLoaderRoute: typeof ApiOwnerVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/library-chat': {
+      id: '/api/library-chat'
+      path: '/api/library-chat'
+      fullPath: '/api/library-chat'
+      preLoaderRoute: typeof ApiLibraryChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +134,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeeRoute: EmployeeRoute,
   StudentRoute: StudentRoute,
+  ApiLibraryChatRoute: ApiLibraryChatRoute,
+  ApiOwnerVerifyRoute: ApiOwnerVerifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

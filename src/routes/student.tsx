@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { LibraryBot } from "@/components/LibraryBot";
 import {
   fetchBooks,
   createBorrowRequest,
@@ -190,6 +191,8 @@ function StudentDashboard() {
           onSubmit={submitRequest}
         />
       )}
+
+      <LibraryBot />
     </div>
   );
 }
