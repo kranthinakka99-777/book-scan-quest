@@ -110,3 +110,51 @@ export async function markReturned(id: string) {
     .eq("id", id);
   if (error) throw error;
 }
+
+// ---------- Student profiles ----------
+export type StudentProfile = {
+  id: string;
+  user_id: string;
+  full_name: string;
+  roll_number: string;
+  branch: string;
+  identifier_type: "email" | "phone";
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function fetchMyProfile(userId: string): Promise<StudentProfile | null> {
+  const { data, error } = await supabase
+    .from("student_profiles")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as StudentProfile) ?? null;
+}
+
+export async function upsertMyProfile(input: {
+  user_id: string;
+  full_name: string;
+  roll_number: string;
+  branch: string;
+  identifier_type: "email" | "phone";
+  email: string | null;
+  phone: string | null;
+}) {
+  const { error } = await supabase
+    .from("student_profiles")
+    .upsert(input, { onConflict: "user_id" });
+  if (error) throw error;
+}
+
+export async function fetchAllStudents(): Promise<StudentProfile[]> {
+  const { data, error } = await supabase
+    .from("student_profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as StudentProfile[];
+}
