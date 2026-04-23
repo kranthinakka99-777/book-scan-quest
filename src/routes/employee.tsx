@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock } from "lucide-react";
+import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   fetchBooks, upsertBook, deleteBook, type Book,
   fetchAllRequests, approveRequest, rejectRequest, markReturned,
   type BorrowRequestWithBook,
+  fetchAllStudents, type StudentProfile,
 } from "@/lib/library";
 import { QrScanner } from "@/components/QrScanner";
 
@@ -112,14 +113,17 @@ function EmployeeDashboard() {
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [tab, setTab] = useState<"books" | "queue">("books");
+  const [tab, setTab] = useState<"books" | "queue" | "students">("books");
   const [requests, setRequests] = useState<BorrowRequestWithBook[]>([]);
   const [queueFilter, setQueueFilter] = useState<"pending" | "approved" | "all">("pending");
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
 
   const reload = () => fetchBooks().then(setBooks).catch((e) => toast.error(e.message));
   const reloadRequests = () => fetchAllRequests().then(setRequests).catch((e) => toast.error(e.message));
+  const reloadStudents = () => fetchAllStudents().then(setStudents).catch((e) => toast.error(e.message));
 
-  useEffect(() => { reload(); reloadRequests(); }, []);
+  useEffect(() => { reload(); reloadRequests(); reloadStudents(); }, []);
 
   const visible = rack === "all" ? books : books.filter((b) => b.rack_number === rack);
 
@@ -252,6 +256,13 @@ function EmployeeDashboard() {
           >
             <Inbox className="w-4 h-4" /> Borrow queue
             {pendingCount > 0 && <Badge variant="destructive">{pendingCount}</Badge>}
+          </button>
+          <button
+            onClick={() => setTab("students")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition inline-flex items-center gap-2 ${tab === "students" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            <Users className="w-4 h-4" /> Students
+            {students.length > 0 && <Badge variant="secondary">{students.length}</Badge>}
           </button>
         </div>
 
