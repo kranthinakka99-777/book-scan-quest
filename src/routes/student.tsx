@@ -96,15 +96,20 @@ function StudentDashboard() {
         student_identifier: id.trim(),
         notes: notes.trim() || undefined,
       });
-      localStorage.setItem("student_id", id.trim());
-      localStorage.setItem("student_name", name.trim());
-      setIdentifier(id.trim());
-      setStudentName(name.trim());
       setRequesting(null);
       toast.success("Request submitted — pending approval");
       reloadMine();
     } catch (e: any) { toast.error(e.message); }
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  };
+
+  if (!authChecked) {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,16 +120,18 @@ function StudentDashboard() {
             <BookOpen className="w-8 h-8" />
             <div>
               <h1 className="text-2xl font-bold">Smart AI Library</h1>
-              <p className="text-sm text-primary-foreground/85">Student dashboard</p>
+              <p className="text-sm text-primary-foreground/85">
+                {profile ? `${profile.full_name} · ${profile.roll_number} · ${profile.branch}` : "Student dashboard"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowMine((v) => !v)} className="text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
               My requests {myRequests.length > 0 && <span className="ml-1 bg-white/25 rounded px-1.5">{myRequests.length}</span>}
             </button>
-            <Link to="/" className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
-              <ArrowLeft className="w-4 h-4" /> Logout
-            </Link>
+            <button onClick={handleLogout} className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
+              <LogOut className="w-4 h-4" /> Log out
+            </button>
           </div>
         </div>
       </header>
