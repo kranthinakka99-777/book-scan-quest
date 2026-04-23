@@ -370,6 +370,50 @@ function EmployeeDashboard() {
             </div>
           </div>
         )}
+
+        {tab === "students" && (
+          <div>
+            <div className="mb-4">
+              <Input
+                placeholder="Search by name, roll number, branch, email, or phone…"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+            <div className="grid gap-3">
+              {students
+                .filter((s) => {
+                  const q = studentSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return [s.full_name, s.roll_number, s.branch, s.email ?? "", s.phone ?? ""]
+                    .some((v) => v.toLowerCase().includes(q));
+                })
+                .map((s) => (
+                  <Card key={s.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold">{s.full_name}</h3>
+                        <Badge variant="outline">{s.branch}</Badge>
+                        <Badge variant="secondary" className="capitalize">{s.identifier_type}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Roll: {s.roll_number}
+                        {s.email ? ` · ${s.email}` : ""}
+                        {s.phone ? ` · ${s.phone}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Joined {new Date(s.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </Card>
+                ))}
+              {students.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No students have signed up yet.</p>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {scanning && <QrScanner onScan={onScan} onClose={() => setScanning(false)} />}
