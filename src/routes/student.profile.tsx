@@ -13,7 +13,12 @@ export const Route = createFileRoute("/student/profile")({
     meta: [
       { title: "My Profile — Smart AI Library" },
       { name: "description", content: "View your student profile and borrow activity timeline." },
+      { property: "og:title", content: "My Profile — Smart AI Library" },
+      { property: "og:description", content: "View your student profile and borrow activity timeline." },
+      { property: "og:url", content: "https://book-scan-quest.lovable.app/student/profile" },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://book-scan-quest.lovable.app/student/profile" }],
   }),
   component: ProfilePage,
 });
