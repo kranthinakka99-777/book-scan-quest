@@ -1,0 +1,14 @@
+# Smart AI Library
+
+> AI-powered library catalog with QR scanning, rack inventory management, and student borrow requests.
+
+Smart AI Library helps librarians manage book inventory and helps students search the catalog, check availability, and locate books by rack. Employees scan QR codes to update stock; students search by title, ID, or author and request to borrow.
+
+## Pages
+
+- [Home](/): Choose to sign in as a student or as library staff.
+- [Student Login](/student-auth): Sign in or create a student account with email or phone.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Machine-readable list of public routes.
