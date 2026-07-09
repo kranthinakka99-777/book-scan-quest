@@ -77,7 +77,7 @@ export function LibraryBot() {
             <p className="text-xs text-primary-foreground/80 leading-tight">Find your next read</p>
           </div>
         </div>
-        <button onClick={() => setOpen(false)} className="text-primary-foreground/90 hover:text-primary-foreground">
+        <button onClick={() => setOpen(false)} aria-label="Close chat" className="text-primary-foreground/90 hover:text-primary-foreground">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -113,7 +113,7 @@ export function LibraryBot() {
           placeholder="Ask about a topic or subject…"
           disabled={loading}
         />
-        <Button onClick={send} disabled={loading || !input.trim()} size="icon">
+        <Button onClick={send} disabled={loading || !input.trim()} size="icon" aria-label="Send message">
           <Send className="w-4 h-4" />
         </Button>
       </div>
