@@ -14,7 +14,11 @@ export const Route = createFileRoute("/student-auth")({
     meta: [
       { title: "Student Login — Smart AI Library" },
       { name: "description", content: "Sign in or create a student account with email or phone." },
+      { property: "og:title", content: "Student Login — Smart AI Library" },
+      { property: "og:description", content: "Sign in or create a student account with email or phone." },
+      { property: "og:url", content: "https://book-scan-quest.lovable.app/student-auth" },
     ],
+    links: [{ rel: "canonical", href: "https://book-scan-quest.lovable.app/student-auth" }],
   }),
   component: StudentAuthPage,
 });
