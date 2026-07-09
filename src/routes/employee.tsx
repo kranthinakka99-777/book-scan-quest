@@ -22,7 +22,11 @@ export const Route = createFileRoute("/employee")({
     meta: [
       { title: "Employee Dashboard — Smart AI Library" },
       { name: "description", content: "Book map — manage books, scan QR codes, and update rack inventory." },
+      { property: "og:title", content: "Employee Dashboard — Smart AI Library" },
+      { property: "og:description", content: "Manage books, scan QR codes, and update rack inventory." },
+      { property: "og:url", content: "https://book-scan-quest.lovable.app/employee" },
     ],
+    links: [{ rel: "canonical", href: "https://book-scan-quest.lovable.app/employee" }],
   }),
   component: EmployeeGate,
 });
