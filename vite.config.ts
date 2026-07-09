@@ -14,10 +14,5 @@ export default defineConfig({
     router: {
       basepath: "/book-scan-quest",
     },
-    spa: {
-      prerender: {
-        outputPath: "/",
-      },
-    },
   },
 });
