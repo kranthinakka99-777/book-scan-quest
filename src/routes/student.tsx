@@ -72,7 +72,7 @@ function StudentDashboard() {
 
   const reloadMine = () => {
     if (!identifier) { setMyRequests([]); return; }
-    fetchMyRequests(identifier).then(setMyRequests).catch(() => {});
+    fetchMyRequests().then(setMyRequests).catch(() => {});
   };
 
   useEffect(() => { reloadMine(); }, [identifier]);
@@ -86,14 +86,11 @@ function StudentDashboard() {
     );
   }, [books, query]);
 
-  const submitRequest = async (name: string, id: string, notes: string) => {
+  const submitRequest = async (_name: string, _id: string, notes: string) => {
     if (!requesting) return;
-    if (!name.trim() || !id.trim()) { toast.error("Name and roll/email are required"); return; }
     try {
       await createBorrowRequest({
         book_id: requesting.id,
-        student_name: name.trim(),
-        student_identifier: id.trim(),
         notes: notes.trim() || undefined,
       });
       setRequesting(null);
