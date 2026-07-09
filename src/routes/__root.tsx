@@ -29,23 +29,33 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Smart Library Hub is a web application for managing library book inventory and facilitating student book searches." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Smart Library Hub is a web application for managing library book inventory and facilitating student book searches." },
+      { title: "Smart AI Library" },
+      { name: "description", content: "Smart AI Library — search books, manage racks, and track availability with QR scanning." },
+      { property: "og:site_name", content: "Smart AI Library" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Smart Library Hub is a web application for managing library book inventory and facilitating student book searches." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7baf3716-413a-4e6c-a77c-f8de232e69d0/id-preview-2efdf6fd--2fbaa0e3-4fc1-4ad6-b045-d54ab9023da1.lovable.app-1776757833555.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7baf3716-413a-4e6c-a77c-f8de232e69d0/id-preview-2efdf6fd--2fbaa0e3-4fc1-4ad6-b045-d54ab9023da1.lovable.app-1776757833555.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Smart AI Library",
+          url: "https://book-scan-quest.lovable.app",
+          description: "AI-powered library catalog with QR scanning and rack inventory management.",
+          publisher: {
+            "@type": "Organization",
+            name: "Smart AI Library",
+            url: "https://book-scan-quest.lovable.app",
+          },
+        }),
       },
     ],
   }),
@@ -69,5 +79,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <main>
+      <Outlet />
+    </main>
+  );
 }
