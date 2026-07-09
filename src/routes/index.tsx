@@ -7,7 +7,11 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Smart AI Library — Login" },
       { name: "description", content: "Smart AI Library: search books, manage racks, and track availability with QR scanning." },
+      { property: "og:title", content: "Smart AI Library — Login" },
+      { property: "og:description", content: "Search books, manage racks, and track availability with QR scanning." },
+      { property: "og:url", content: "https://book-scan-quest.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://book-scan-quest.lovable.app/" }],
   }),
   component: LoginPage,
 });
