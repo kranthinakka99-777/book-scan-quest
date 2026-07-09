@@ -116,9 +116,9 @@ function StudentDashboard() {
           <div className="flex items-center gap-3">
             <BookOpen className="w-8 h-8" />
             <div>
-              <h1 className="text-2xl font-bold">Smart AI Library</h1>
+              <h1 className="text-2xl font-bold">Smart AI Library — Student Dashboard</h1>
               <p className="text-sm text-primary-foreground/85">
-                {profile ? `${profile.full_name} · ${profile.roll_number} · ${profile.branch}` : "Student dashboard"}
+                {profile ? `${profile.full_name} · ${profile.roll_number} · ${profile.branch}` : "Search books and manage borrow requests"}
               </p>
             </div>
           </div>

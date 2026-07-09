@@ -240,8 +240,8 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
           <div className="flex items-center gap-3">
             <BookOpen className="w-8 h-8" />
             <div>
-              <h1 className="text-2xl font-bold">Smart AI Library</h1>
-              <p className="text-sm text-primary-foreground/85">Book map</p>
+              <h1 className="text-2xl font-bold">Smart AI Library — Book Map Management</h1>
+              <p className="text-sm text-primary-foreground/85">Catalog, borrow queue, and students</p>
             </div>
           </div>
           <button
@@ -301,7 +301,7 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
             <Card key={b.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold">{b.name}</h3>
+                  <h2 className="font-semibold">{b.name}</h2>
                   <Badge variant={b.available_copies > 0 ? "default" : "destructive"}>
                     {b.available_copies}/{b.total_copies}
                   </Badge>
@@ -312,8 +312,8 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => startEdit(b)}><Pencil className="w-4 h-4" /></Button>
-                <Button size="sm" variant="outline" onClick={() => remove(b)}><Trash2 className="w-4 h-4" /></Button>
+                <Button size="sm" variant="outline" onClick={() => startEdit(b)} aria-label={`Edit ${b.name}`}><Pencil className="w-4 h-4" /></Button>
+                <Button size="sm" variant="outline" onClick={() => remove(b)} aria-label={`Delete ${b.name}`}><Trash2 className="w-4 h-4" /></Button>
               </div>
             </Card>
           ))}
@@ -342,7 +342,7 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
                   <Card key={r.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold">{r.book?.name ?? "Book"}</h3>
+                        <h2 className="font-semibold">{r.book?.name ?? "Book"}</h2>
                         <Badge variant={
                           r.status === "approved" ? "default"
                           : r.status === "pending" ? "secondary"
@@ -404,7 +404,7 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
                   <Card key={s.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold">{s.full_name}</h3>
+                        <h2 className="font-semibold">{s.full_name}</h2>
                         <Badge variant="outline">{s.branch}</Badge>
                         <Badge variant="secondary" className="capitalize">{s.identifier_type}</Badge>
                       </div>
@@ -434,7 +434,7 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
           <Card className="w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">{editing.id ? "Edit book" : "Add book"}</h3>
-              <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+              <button onClick={() => setEditing(null)} aria-label="Close book form" className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
               <Field label="Name"><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>

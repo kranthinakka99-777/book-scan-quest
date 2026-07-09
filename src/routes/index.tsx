@@ -33,7 +33,7 @@ function LoginPage() {
           </div>
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight flex items-center justify-center gap-3">
             <BookOpen className="w-12 h-12" />
-            Smart AI Library
+            Smart AI Library — Login
           </h1>
           <p className="mt-4 text-lg text-primary-foreground/85">Choose how you want to sign in</p>
         </div>
