@@ -14,6 +14,8 @@ import {
   fetchAllStudents, type StudentProfile,
 } from "@/lib/library";
 import { QrScanner } from "@/components/QrScanner";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyOwner, signOutOwner, isOwnerUnlocked } from "@/lib/library.functions";
 
 export const Route = createFileRoute("/employee")({
   head: () => ({
@@ -26,33 +28,38 @@ export const Route = createFileRoute("/employee")({
 });
 
 function EmployeeGate() {
-  const [unlocked, setUnlocked] = useState<boolean>(() =>
-    typeof window !== "undefined" && sessionStorage.getItem("owner_unlocked") === "1"
-  );
-  if (!unlocked) return <OwnerLogin onUnlock={() => setUnlocked(true)} />;
-  return <EmployeeDashboard />;
+  const [state, setState] = useState<"loading" | "locked" | "unlocked">("loading");
+  const check = useServerFn(isOwnerUnlocked);
+  useEffect(() => {
+    check().then((r) => setState(r.unlocked ? "unlocked" : "locked")).catch(() => setState("locked"));
+  }, [check]);
+  if (state === "loading") {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+  }
+  if (state === "locked") return <OwnerLogin onUnlock={() => setState("unlocked")} />;
+  return <EmployeeDashboard onLogout={() => setState("locked")} />;
 }
 
 function OwnerLogin({ onUnlock }: { onUnlock: () => void }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const verify = useServerFn(verifyOwner);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/owner-verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+      const res = await verify({ data: { password } });
       if (res.ok) {
-        sessionStorage.setItem("owner_unlocked", "1");
         toast.success("Welcome back, owner");
         onUnlock();
       } else {
-        toast.error("Incorrect password");
+        toast.error(
+          res.retryAfter
+            ? `Too many attempts. Try again in ${Math.ceil(res.retryAfter / 60)} min.`
+            : "Incorrect password",
+        );
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Network error");
@@ -108,7 +115,8 @@ type FormState = {
 const BRANCHES = ["AIML", "CSE", "EEE", "ECE", "MEC", "CIVIL", "IT"];
 const empty: FormState = { name: "", author: "", rack_number: 1, branch: "", total_copies: 1, available_copies: 1 };
 
-function EmployeeDashboard() {
+function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
+  const doSignOut = useServerFn(signOutOwner);
   const [books, setBooks] = useState<Book[]>([]);
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
@@ -236,9 +244,12 @@ function EmployeeDashboard() {
               <p className="text-sm text-primary-foreground/85">Book map</p>
             </div>
           </div>
-          <Link to="/" className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition">
+          <button
+            onClick={async () => { try { await doSignOut(); } finally { onLogout(); } }}
+            className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition"
+          >
             <ArrowLeft className="w-4 h-4" /> Logout
-          </Link>
+          </button>
         </div>
       </header>
 

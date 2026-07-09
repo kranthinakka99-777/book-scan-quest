@@ -1,4 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  adminUpsertBook,
+  adminDeleteBook,
+  adminListRequests,
+  adminApproveRequest,
+  adminRejectRequest,
+  adminMarkReturned,
+  adminListStudents,
+  studentCreateRequest,
+  studentListMyRequests,
+} from "./library.functions";
 
 export type Book = {
   id: string;
@@ -19,19 +30,11 @@ export async function fetchBooks(): Promise<Book[]> {
 }
 
 export async function upsertBook(book: Omit<Book, "id" | "created_at" | "updated_at"> & { id?: string }) {
-  if (book.id) {
-    const { id, ...rest } = book;
-    const { error } = await supabase.from("books").update(rest).eq("id", id);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from("books").insert(book);
-    if (error) throw error;
-  }
+  await adminUpsertBook({ data: book });
 }
 
 export async function deleteBook(id: string) {
-  const { error } = await supabase.from("books").delete().eq("id", id);
-  if (error) throw error;
+  await adminDeleteBook({ data: { id } });
 }
 
 export type BorrowStatus = "pending" | "approved" | "rejected" | "returned";
@@ -55,60 +58,29 @@ export type BorrowRequestWithBook = BorrowRequest & { book: Book | null };
 
 export async function createBorrowRequest(input: {
   book_id: string;
-  student_name: string;
-  student_identifier: string;
   notes?: string;
 }) {
-  const { error } = await supabase.from("borrow_requests").insert({
-    book_id: input.book_id,
-    student_name: input.student_name,
-    student_identifier: input.student_identifier,
-    notes: input.notes ?? null,
-  });
-  if (error) throw error;
+  await studentCreateRequest({ data: { book_id: input.book_id, notes: input.notes } });
 }
 
-export async function fetchMyRequests(identifier: string): Promise<BorrowRequestWithBook[]> {
-  const { data, error } = await supabase
-    .from("borrow_requests")
-    .select("*, book:books(*)")
-    .eq("student_identifier", identifier)
-    .order("requested_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as BorrowRequestWithBook[];
+export async function fetchMyRequests(): Promise<BorrowRequestWithBook[]> {
+  return (await studentListMyRequests()) as BorrowRequestWithBook[];
 }
 
 export async function fetchAllRequests(): Promise<BorrowRequestWithBook[]> {
-  const { data, error } = await supabase
-    .from("borrow_requests")
-    .select("*, book:books(*)")
-    .order("requested_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as BorrowRequestWithBook[];
+  return (await adminListRequests()) as BorrowRequestWithBook[];
 }
 
 export async function approveRequest(id: string, dueDate: string) {
-  const { error } = await supabase
-    .from("borrow_requests")
-    .update({ status: "approved", due_date: dueDate })
-    .eq("id", id);
-  if (error) throw error;
+  await adminApproveRequest({ data: { id, due_date: dueDate } });
 }
 
 export async function rejectRequest(id: string) {
-  const { error } = await supabase
-    .from("borrow_requests")
-    .update({ status: "rejected" })
-    .eq("id", id);
-  if (error) throw error;
+  await adminRejectRequest({ data: { id } });
 }
 
 export async function markReturned(id: string) {
-  const { error } = await supabase
-    .from("borrow_requests")
-    .update({ status: "returned" })
-    .eq("id", id);
-  if (error) throw error;
+  await adminMarkReturned({ data: { id } });
 }
 
 // ---------- Student profiles ----------
@@ -151,10 +123,5 @@ export async function upsertMyProfile(input: {
 }
 
 export async function fetchAllStudents(): Promise<StudentProfile[]> {
-  const { data, error } = await supabase
-    .from("student_profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as StudentProfile[];
+  return (await adminListStudents()) as StudentProfile[];
 }
