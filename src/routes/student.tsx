@@ -25,7 +25,11 @@ export const Route = createFileRoute("/student")({
     meta: [
       { title: "Student Dashboard — Smart AI Library" },
       { name: "description", content: "Search the Smart AI Library catalog by name, ID, or author." },
+      { property: "og:title", content: "Student Dashboard — Smart AI Library" },
+      { property: "og:description", content: "Search the Smart AI Library catalog by name, ID, or author." },
+      { property: "og:url", content: "https://book-scan-quest.lovable.app/student" },
     ],
+    links: [{ rel: "canonical", href: "https://book-scan-quest.lovable.app/student" }],
   }),
   component: StudentDashboard,
 });
