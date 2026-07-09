@@ -35,11 +35,8 @@ function ProfilePage() {
         const p = await fetchMyProfile(user.id);
         if (!p) { navigate({ to: "/student-auth" }); return; }
         setProfile(p);
-        const id = p.identifier_type === "email" ? p.email ?? "" : p.phone ?? "";
-        if (id) {
-          const r = await fetchMyRequests(id);
-          setRequests(r);
-        }
+        const r = await fetchMyRequests();
+        setRequests(r);
       } catch { /* ignore */ }
       setAuthChecked(true);
       setLoading(false);
