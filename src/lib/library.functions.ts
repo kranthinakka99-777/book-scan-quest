@@ -2,8 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function admin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 // ---------- Owner (employee) session ----------
 
@@ -105,11 +109,11 @@ export const adminUpsertBook = createServerFn({ method: "POST" })
     await requireOwner();
     if (data.id) {
       const { id, ...rest } = data;
-      const { error } = await supabaseAdmin.from("books").update(rest).eq("id", id);
+      const { error } = await (await admin()).from("books").update(rest).eq("id", id);
       if (error) throw new Response("Failed to update book", { status: 500 });
     } else {
       const { id: _omit, ...rest } = data;
-      const { error } = await supabaseAdmin.from("books").insert(rest);
+      const { error } = await (await admin()).from("books").insert(rest);
       if (error) throw new Response("Failed to insert book", { status: 500 });
     }
     return { ok: true as const };
@@ -119,7 +123,7 @@ export const adminDeleteBook = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireOwner();
-    const { error } = await supabaseAdmin.from("books").delete().eq("id", data.id);
+    const { error } = await (await admin()).from("books").delete().eq("id", data.id);
     if (error) throw new Response("Failed to delete book", { status: 500 });
     return { ok: true as const };
   });
@@ -128,7 +132,7 @@ export const adminDeleteBook = createServerFn({ method: "POST" })
 
 export const adminListRequests = createServerFn({ method: "GET" }).handler(async () => {
   await requireOwner();
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (await admin())
     .from("borrow_requests")
     .select("*, book:books(*)")
     .order("requested_at", { ascending: false });
@@ -145,7 +149,7 @@ export const adminApproveRequest = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireOwner();
-    const { error } = await supabaseAdmin
+    const { error } = await (await admin())
       .from("borrow_requests")
       .update({ status: "approved", due_date: data.due_date })
       .eq("id", data.id);
@@ -157,7 +161,7 @@ export const adminRejectRequest = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireOwner();
-    const { error } = await supabaseAdmin
+    const { error } = await (await admin())
       .from("borrow_requests")
       .update({ status: "rejected" })
       .eq("id", data.id);
@@ -169,7 +173,7 @@ export const adminMarkReturned = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireOwner();
-    const { error } = await supabaseAdmin
+    const { error } = await (await admin())
       .from("borrow_requests")
       .update({ status: "returned" })
       .eq("id", data.id);
@@ -181,7 +185,7 @@ export const adminMarkReturned = createServerFn({ method: "POST" })
 
 export const adminListStudents = createServerFn({ method: "GET" }).handler(async () => {
   await requireOwner();
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (await admin())
     .from("student_profiles")
     .select("*")
     .order("created_at", { ascending: false });
@@ -201,7 +205,8 @@ export const studentCreateRequest = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => createReqSchema.parse(d))
   .handler(async ({ data, context }) => {
     // Resolve the student profile server-side; never trust client-supplied identity.
-    const { data: profile, error: pErr } = await supabaseAdmin
+    const sb = await admin();
+    const { data: profile, error: pErr } = await sb
       .from("student_profiles")
       .select("full_name, identifier_type, email, phone")
       .eq("user_id", context.userId)
@@ -212,7 +217,7 @@ export const studentCreateRequest = createServerFn({ method: "POST" })
       profile.identifier_type === "email" ? profile.email ?? "" : profile.phone ?? "";
     if (!identifier) throw new Response("Profile missing identifier", { status: 400 });
 
-    const { error } = await supabaseAdmin.from("borrow_requests").insert({
+    const { error } = await sb.from("borrow_requests").insert({
       book_id: data.book_id,
       student_name: profile.full_name,
       student_identifier: identifier,
@@ -225,7 +230,8 @@ export const studentCreateRequest = createServerFn({ method: "POST" })
 export const studentListMyRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: profile } = await supabaseAdmin
+    const sb = await admin();
+    const { data: profile } = await sb
       .from("student_profiles")
       .select("identifier_type, email, phone")
       .eq("user_id", context.userId)
@@ -236,7 +242,7 @@ export const studentListMyRequests = createServerFn({ method: "GET" })
         : profile.phone ?? ""
       : "";
     if (!identifier) return [];
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await sb
       .from("borrow_requests")
       .select("*, book:books(*)")
       .eq("student_identifier", identifier)
