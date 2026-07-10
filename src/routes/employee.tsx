@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock, Users } from "lucide-react";
+import { BookOpen, ArrowLeft, QrCode, Plus, Pencil, Trash2, X, Check, Inbox, RotateCcw, Lock, Users, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,12 @@ import {
   fetchAllStudents, type StudentProfile,
 } from "@/lib/library";
 import { QrScanner } from "@/components/QrScanner";
-import { useServerFn } from "@tanstack/react-start";
-import { verifyOwner, signOutOwner, isOwnerUnlocked } from "@/lib/library.functions";
+import { supabase } from "@/integrations/supabase/client";
+
+const OWNER_EMAIL = "kranthinakka99@gmail.com";
 
 export const Route = createFileRoute("/employee")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Employee Dashboard — Smart AI Library" },
@@ -32,41 +34,65 @@ export const Route = createFileRoute("/employee")({
 });
 
 function EmployeeGate() {
-  const [state, setState] = useState<"loading" | "locked" | "unlocked">("loading");
-  const check = useServerFn(isOwnerUnlocked);
+  const [state, setState] = useState<"loading" | "signed-out" | "wrong-user" | "owner">("loading");
+  const [email, setEmail] = useState<string | null>(null);
+
   useEffect(() => {
-    check().then((r) => setState(r.unlocked ? "unlocked" : "locked")).catch(() => setState("locked"));
-  }, [check]);
+    const resolve = (userEmail: string | null | undefined) => {
+      setEmail(userEmail ?? null);
+      if (!userEmail) setState("signed-out");
+      else if (userEmail.toLowerCase() === OWNER_EMAIL) setState("owner");
+      else setState("wrong-user");
+    };
+    supabase.auth.getUser().then(({ data }) => resolve(data.user?.email ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      resolve(session?.user?.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   if (state === "loading") {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   }
-  if (state === "locked") return <OwnerLogin onUnlock={() => setState("unlocked")} />;
-  return <EmployeeDashboard onLogout={() => setState("locked")} />;
+  if (state === "signed-out") return <OwnerLogin />;
+  if (state === "wrong-user") return <NotAuthorized email={email} />;
+  return <EmployeeDashboard />;
 }
 
-function OwnerLogin({ onUnlock }: { onUnlock: () => void }) {
+function OwnerLogin() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const verify = useServerFn(verifyOwner);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) return;
+    if (!email || !password) return;
+    const trimmed = email.trim();
+    if (trimmed.toLowerCase() !== OWNER_EMAIL) {
+      toast.error("This email is not the Book Map owner");
+      return;
+    }
     setLoading(true);
     try {
-      const res = await verify({ data: { password } });
-      if (res.ok) {
-        toast.success("Welcome back, owner");
-        onUnlock();
+      if (mode === "signup") {
+        if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+        const { error } = await supabase.auth.signUp({
+          email: trimmed,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/employee` },
+        });
+        if (error) throw error;
+        toast.success("Owner account created — signing you in…");
+        // Try to sign in immediately (works when email confirmation is off)
+        await supabase.auth.signInWithPassword({ email: trimmed, password });
       } else {
-        toast.error(
-          res.retryAfter
-            ? `Too many attempts. Try again in ${Math.ceil(res.retryAfter / 60)} min.`
-            : "Incorrect password",
-        );
+        const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
+        if (error) throw error;
+        toast.success("Welcome back, owner");
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Network error");
+      toast.error(e?.message ?? (mode === "signup" ? "Signup failed" : "Login failed"));
     } finally {
       setLoading(false);
     }
@@ -81,26 +107,74 @@ function OwnerLogin({ onUnlock }: { onUnlock: () => void }) {
           <h1 className="text-2xl font-bold">Owner access</h1>
         </div>
         <p className="text-sm text-muted-foreground mb-5">
-          The Book Map is restricted. Enter the owner password to continue.
+          The Book Map is restricted to the owner account. Sign in with the
+          owner email and password to continue.
         </p>
+        <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-md mb-4">
+          {(["signin", "signup"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`text-sm py-1.5 rounded ${mode === m ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+            >
+              {m === "signin" ? "Sign in" : "Create owner account"}
+            </button>
+          ))}
+        </div>
         <form onSubmit={submit} className="space-y-3">
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Owner email"
+            autoFocus
+            autoComplete="email"
+            maxLength={200}
+          />
           <Input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Owner password"
-            autoFocus
+            placeholder={mode === "signup" ? "Set a password (min 8 chars)" : "Password"}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
             maxLength={200}
           />
           <div className="flex gap-2">
-            <Button type="submit" disabled={loading || !password} className="flex-1">
-              {loading ? "Verifying…" : "Unlock Book Map"}
+            <Button type="submit" disabled={loading || !email || !password} className="flex-1">
+              {loading
+                ? (mode === "signup" ? "Creating…" : "Signing in…")
+                : (mode === "signup" ? "Create owner account" : "Sign in as owner")}
             </Button>
             <Link to="/" className="inline-flex items-center justify-center text-sm px-3 rounded-md border hover:bg-muted">
               Back
             </Link>
           </div>
         </form>
+      </Card>
+    </div>
+  );
+}
+
+function NotAuthorized({ email }: { email: string | null }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--gradient-hero)" }}>
+      <Toaster />
+      <Card className="w-full max-w-md p-7">
+        <div className="flex items-center gap-3 mb-2">
+          <Mail className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold">Not authorized</h1>
+        </div>
+        <p className="text-sm text-muted-foreground mb-5">
+          You're signed in as <span className="font-medium">{email ?? "(unknown)"}</span>,
+          but the Book Map is restricted to the owner account.
+        </p>
+        <div className="flex gap-2">
+          <Button onClick={() => supabase.auth.signOut()} className="flex-1">Sign out</Button>
+          <Link to="/" className="inline-flex items-center justify-center text-sm px-3 rounded-md border hover:bg-muted">
+            Back
+          </Link>
+        </div>
       </Card>
     </div>
   );
@@ -119,8 +193,7 @@ type FormState = {
 const BRANCHES = ["AIML", "CSE", "EEE", "ECE", "MEC", "CIVIL", "IT"];
 const empty: FormState = { name: "", author: "", rack_number: 1, branch: "", total_copies: 1, available_copies: 1 };
 
-function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
-  const doSignOut = useServerFn(signOutOwner);
+function EmployeeDashboard() {
   const [books, setBooks] = useState<Book[]>([]);
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
@@ -249,7 +322,7 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <button
-            onClick={async () => { try { await doSignOut(); } finally { onLogout(); } }}
+            onClick={async () => { await supabase.auth.signOut(); }}
             className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition"
           >
             <ArrowLeft className="w-4 h-4" /> Logout
