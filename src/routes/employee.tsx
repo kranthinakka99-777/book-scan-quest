@@ -63,23 +63,36 @@ function OwnerLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
+    const trimmed = email.trim();
+    if (trimmed.toLowerCase() !== OWNER_EMAIL) {
+      toast.error("This email is not the Book Map owner");
+      return;
+    }
     setLoading(true);
     try {
-      const trimmed = email.trim();
-      const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
-      if (error) throw error;
-      if (trimmed.toLowerCase() !== OWNER_EMAIL) {
-        toast.error("This account is not the Book Map owner");
-        await supabase.auth.signOut();
-        return;
+      if (mode === "signup") {
+        if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+        const { error } = await supabase.auth.signUp({
+          email: trimmed,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/employee` },
+        });
+        if (error) throw error;
+        toast.success("Owner account created — signing you in…");
+        // Try to sign in immediately (works when email confirmation is off)
+        await supabase.auth.signInWithPassword({ email: trimmed, password });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
+        if (error) throw error;
+        toast.success("Welcome back, owner");
       }
-      toast.success("Welcome back, owner");
     } catch (e: any) {
-      toast.error(e?.message ?? "Login failed");
+      toast.error(e?.message ?? (mode === "signup" ? "Signup failed" : "Login failed"));
     } finally {
       setLoading(false);
     }
@@ -97,6 +110,18 @@ function OwnerLogin() {
           The Book Map is restricted to the owner account. Sign in with the
           owner email and password to continue.
         </p>
+        <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-md mb-4">
+          {(["signin", "signup"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`text-sm py-1.5 rounded ${mode === m ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+            >
+              {m === "signin" ? "Sign in" : "Create owner account"}
+            </button>
+          ))}
+        </div>
         <form onSubmit={submit} className="space-y-3">
           <Input
             type="email"
@@ -111,13 +136,15 @@ function OwnerLogin() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            autoComplete="current-password"
+            placeholder={mode === "signup" ? "Set a password (min 8 chars)" : "Password"}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
             maxLength={200}
           />
           <div className="flex gap-2">
             <Button type="submit" disabled={loading || !email || !password} className="flex-1">
-              {loading ? "Signing in…" : "Sign in as owner"}
+              {loading
+                ? (mode === "signup" ? "Creating…" : "Signing in…")
+                : (mode === "signup" ? "Create owner account" : "Sign in as owner")}
             </Button>
             <Link to="/" className="inline-flex items-center justify-center text-sm px-3 rounded-md border hover:bg-muted">
               Back
