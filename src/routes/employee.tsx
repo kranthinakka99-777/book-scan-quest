@@ -166,8 +166,7 @@ type FormState = {
 const BRANCHES = ["AIML", "CSE", "EEE", "ECE", "MEC", "CIVIL", "IT"];
 const empty: FormState = { name: "", author: "", rack_number: 1, branch: "", total_copies: 1, available_copies: 1 };
 
-function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
-  const doSignOut = useServerFn(signOutOwner);
+function EmployeeDashboard() {
   const [books, setBooks] = useState<Book[]>([]);
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
@@ -296,7 +295,7 @@ function EmployeeDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <button
-            onClick={async () => { try { await doSignOut(); } finally { onLogout(); } }}
+            onClick={async () => { await supabase.auth.signOut(); }}
             className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition"
           >
             <ArrowLeft className="w-4 h-4" /> Logout
