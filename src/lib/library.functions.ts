@@ -1,6 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
-import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -9,87 +7,17 @@ async function admin() {
   return supabaseAdmin;
 }
 
-// ---------- Owner (employee) session ----------
+// ---------- Owner (employee) gate ----------
+// The Book Map is restricted to a single owner account, identified by email
+// on the Supabase JWT. Only requests signed in as this user pass the gate.
+const OWNER_EMAIL = "kranthinakka99@gmail.com";
 
-type OwnerSession = {
-  unlocked?: boolean;
-  attempts?: number;
-  lockedUntil?: number;
-};
-
-function sessionConfig() {
-  const password = process.env.ADMIN_SESSION_SECRET;
-  if (!password) throw new Error("ADMIN_SESSION_SECRET is not set");
-  return {
-    password,
-    name: "lib-owner",
-    maxAge: 60 * 60 * 8, // 8 hours
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax" as const,
-      path: "/",
-    },
-  };
-}
-
-function eq(a: string, b: string) {
-  const ha = createHash("sha256").update(a, "utf8").digest();
-  const hb = createHash("sha256").update(b, "utf8").digest();
-  return timingSafeEqual(ha, hb);
-}
-
-async function requireOwner() {
-  const session = await useSession<OwnerSession>(sessionConfig());
-  if (!session.data.unlocked) {
-    throw new Response("Unauthorized", { status: 401 });
+function requireOwnerEmail(claims: Record<string, unknown> | undefined) {
+  const email = typeof claims?.email === "string" ? (claims.email as string).toLowerCase() : "";
+  if (email !== OWNER_EMAIL) {
+    throw new Response("Forbidden", { status: 403 });
   }
-  return session;
 }
-
-const MAX_ATTEMPTS = 8;
-const LOCK_MS = 5 * 60 * 1000;
-
-export const verifyOwner = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) =>
-    z.object({ password: z.string().min(1).max(200) }).parse(data),
-  )
-  .handler(async ({ data }) => {
-    const expected = process.env.OWNER_PASSWORD;
-    if (!expected) throw new Response("Owner password not configured", { status: 500 });
-
-    const session = await useSession<OwnerSession>(sessionConfig());
-    const now = Date.now();
-    if (session.data.lockedUntil && session.data.lockedUntil > now) {
-      const retryAfter = Math.ceil((session.data.lockedUntil - now) / 1000);
-      return { ok: false as const, retryAfter };
-    }
-
-    if (!eq(data.password, expected)) {
-      const attempts = (session.data.attempts ?? 0) + 1;
-      const lockedUntil = attempts >= MAX_ATTEMPTS ? now + LOCK_MS : undefined;
-      await session.update({
-        unlocked: false,
-        attempts: lockedUntil ? 0 : attempts,
-        lockedUntil,
-      });
-      return { ok: false as const, retryAfter: lockedUntil ? Math.ceil(LOCK_MS / 1000) : undefined };
-    }
-
-    await session.update({ unlocked: true, attempts: 0, lockedUntil: undefined });
-    return { ok: true as const };
-  });
-
-export const signOutOwner = createServerFn({ method: "POST" }).handler(async () => {
-  const session = await useSession<OwnerSession>(sessionConfig());
-  await session.clear();
-  return { ok: true as const };
-});
-
-export const isOwnerUnlocked = createServerFn({ method: "GET" }).handler(async () => {
-  const session = await useSession<OwnerSession>(sessionConfig());
-  return { unlocked: !!session.data.unlocked };
-});
 
 // ---------- Books ----------
 
@@ -104,9 +32,10 @@ const bookSchema = z.object({
 });
 
 export const adminUpsertBook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => bookSchema.parse(d))
-  .handler(async ({ data }) => {
-    await requireOwner();
+  .handler(async ({ data, context }) => {
+    requireOwnerEmail(context.claims);
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await (await admin()).from("books").update(rest).eq("id", id);
@@ -120,9 +49,10 @@ export const adminUpsertBook = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteBook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    await requireOwner();
+  .handler(async ({ data, context }) => {
+    requireOwnerEmail(context.claims);
     const { error } = await (await admin()).from("books").delete().eq("id", data.id);
     if (error) throw new Response("Failed to delete book", { status: 500 });
     return { ok: true as const };
@@ -130,8 +60,10 @@ export const adminDeleteBook = createServerFn({ method: "POST" })
 
 // ---------- Borrow requests ----------
 
-export const adminListRequests = createServerFn({ method: "GET" }).handler(async () => {
-  await requireOwner();
+export const adminListRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    requireOwnerEmail(context.claims);
   const { data, error } = await (await admin())
     .from("borrow_requests")
     .select("*, book:books(*)")
@@ -141,14 +73,15 @@ export const adminListRequests = createServerFn({ method: "GET" }).handler(async
 });
 
 export const adminApproveRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    await requireOwner();
+  .handler(async ({ data, context }) => {
+    requireOwnerEmail(context.claims);
     const { error } = await (await admin())
       .from("borrow_requests")
       .update({ status: "approved", due_date: data.due_date })
@@ -158,9 +91,10 @@ export const adminApproveRequest = createServerFn({ method: "POST" })
   });
 
 export const adminRejectRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    await requireOwner();
+  .handler(async ({ data, context }) => {
+    requireOwnerEmail(context.claims);
     const { error } = await (await admin())
       .from("borrow_requests")
       .update({ status: "rejected" })
@@ -170,9 +104,10 @@ export const adminRejectRequest = createServerFn({ method: "POST" })
   });
 
 export const adminMarkReturned = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    await requireOwner();
+  .handler(async ({ data, context }) => {
+    requireOwnerEmail(context.claims);
     const { error } = await (await admin())
       .from("borrow_requests")
       .update({ status: "returned" })
@@ -183,8 +118,10 @@ export const adminMarkReturned = createServerFn({ method: "POST" })
 
 // ---------- Students (employee-only listing) ----------
 
-export const adminListStudents = createServerFn({ method: "GET" }).handler(async () => {
-  await requireOwner();
+export const adminListStudents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    requireOwnerEmail(context.claims);
   const { data, error } = await (await admin())
     .from("student_profiles")
     .select("*")
