@@ -147,7 +147,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      borrow_request_belongs_to_user: {
+        Args: { _identifier: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       borrow_status: "pending" | "approved" | "rejected" | "returned"
