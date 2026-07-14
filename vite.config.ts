@@ -17,9 +17,13 @@ export default defineConfig({
     base: githubPagesBase,
   },
   tanstackStart: {
-    pages: [{ path: "/" }],
+    pages: [
+      { path: "/" },
+      { path: "/student-auth" },
+    ],
     prerender: {
       enabled: true,
+      crawlLinks: false,
     },
     router: {
       basepath: githubPagesBase,
