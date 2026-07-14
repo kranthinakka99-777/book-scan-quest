@@ -247,7 +247,10 @@ function EmployeeDashboard({ onLock }: { onLock: () => void }) {
             </div>
           </div>
           <button
-            onClick={async () => { await supabase.auth.signOut(); }}
+            onClick={async () => {
+              try { await lockOwner(); } catch {}
+              onLock();
+            }}
             className="inline-flex items-center gap-2 text-sm bg-white/15 hover:bg-white/25 px-3 py-2 rounded-md transition"
           >
             <ArrowLeft className="w-4 h-4" /> Logout
