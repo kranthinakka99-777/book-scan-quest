@@ -19,7 +19,7 @@ export default defineConfig({
   tanstackStart: {
     pages: [{ path: "/" }],
     prerender: {
-      enabled: true,
+      enabled: false,
     },
     router: {
       basepath: githubPagesBase,
