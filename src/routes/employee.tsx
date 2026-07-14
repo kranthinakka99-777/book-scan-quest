@@ -118,7 +118,7 @@ type FormState = {
 const BRANCHES = ["AIML", "CSE", "EEE", "ECE", "MEC", "CIVIL", "IT"];
 const empty: FormState = { name: "", author: "", rack_number: 1, branch: "", total_copies: 1, available_copies: 1 };
 
-function EmployeeDashboard() {
+function EmployeeDashboard({ onLock }: { onLock: () => void }) {
   const [books, setBooks] = useState<Book[]>([]);
   const [rack, setRack] = useState<number | "all">("all");
   const [editing, setEditing] = useState<FormState | null>(null);
