@@ -5,6 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
 const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
 const githubPagesBase =
@@ -15,6 +16,7 @@ const githubPagesBase =
 export default defineConfig({
   vite: {
     base: githubPagesBase,
+    plugins: [mcpPlugin()],
   },
   tanstackStart: {
     pages: [{ path: "/" }],
