@@ -1,2 +1,3 @@
 [install]
 saveTextLockfile = false
+minimumReleaseAgeExcludes = ["@lovable.dev/vite-tanstack-config", "@lovable.dev/mcp-js"]
