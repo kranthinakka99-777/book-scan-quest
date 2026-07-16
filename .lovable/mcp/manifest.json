@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "smart-ai-library-mcp",
+      "version": "0.1.0",
+      "title": "Smart AI Library MCP"
+    },
+    "tools": [
+      {
+        "name": "search_books",
+        "title": "Search library books",
+        "description": "Search the public library catalog by title, author, or branch. Returns matching books with rack number and availability. Publicly readable data only.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Optional text to match against title, author, or branch.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "limit": {
+              "description": "Max rows to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
